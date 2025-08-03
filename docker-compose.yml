@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  fastapi-demo:
+    image: frp.z33.fun:23827/fastapi-demo:latest   # Jenkins 会动态修改
+    container_name: fastapi-demo
+    ports:
+      - "8089:8089"
+    environment:
+      - ENV=prod
+    restart: unless-stopped

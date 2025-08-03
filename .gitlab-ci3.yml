@@ -1,0 +1,63 @@
+image: python:3.10-slim
+
+stages:
+  - build
+  - deploy
+
+variables:
+  IMAGE_NAME: fastapi_template
+  IMAGE_TAG: v2
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
+build:
+  tags:
+    - build_r
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - apk add --no-cache curl libgcc libstdc++  # 安装 curl 和必要的依赖项
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y  # 安装 Rust
+    - source $HOME/.cargo/env  # 激活 Rust 环境变量
+    - rustc --version  # 检查 Rust 编译器版本
+    - cargo --version  # 检查 Cargo 版本
+    - apk add --no-cache python3 py3-pip  # 安装 Python 和 pip
+    - python3 -m venv /path/to/venv  # 创建虚拟环境
+    - source /path/to/venv/bin/activate  # 激活虚拟环境
+    - python3 -m pip install --upgrade pip
+  script:
+    - python3 -m pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+    - python3 setup.py build
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG -f ./docker/build_dockerfile .
+    - docker save $IMAGE_NAME:$IMAGE_TAG > fastapi.tar
+  artifacts:
+    paths:
+      - fastapi.tar
+
+deploy:
+  tags:
+    - deploy_r
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client docker
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $DEPLOY_SERVER >> ~/.ssh/known_hosts
+  script:
+    - echo $DEPLOY_SERVER  # 应该输出服务器 IP
+    - cat $SSH_PRIVATE_KEY  # 如果是 File 类型，会显示文件路径
+    - scp fastapi.tar $DEPLOY_USER@$DEPLOY_SERVER:/tmp/
+    - |
+      ssh $DEPLOY_USER@$DEPLOY_SERVER << 'EOF'
+        sudo docker load -i /tmp/fastapi.tar
+        sudo docker stop fastapi || true
+        sudo docker rm fastapi || true
+        sudo docker run -d --name fastapi -p 8089:8089 $IMAGE_NAME:$IMAGE_TAG
+      EOF
+  only:
+    - main
