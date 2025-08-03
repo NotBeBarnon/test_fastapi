@@ -54,10 +54,10 @@ async def close_orm() -> None:  # pylint: disable=W0612
 #     scheduler.start()
 
 
-@fast_app.on_event("startup")
-async def init_redis() -> None:
-    redis_client_: RedisSentinelClient = global_om["redis_client"]
-    redis_client_.start()
-    with contextlib.suppress(asyncio.TimeoutError):
-        async with async_timeout.timeout(3) as cm:
-            await redis_client_.wait_connect()
+# @fast_app.on_event("startup")
+# async def init_redis() -> None:
+#     redis_client_: RedisSentinelClient = global_om["redis_client"]
+#     redis_client_.start()
+#     with contextlib.suppress(asyncio.TimeoutError):
+#         async with async_timeout.timeout(3) as cm:
+#             await redis_client_.wait_connect()

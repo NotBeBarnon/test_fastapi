@@ -36,7 +36,7 @@ max_connections = 10  # 连接池数量
 socket_timeout = 1  # 连接超时时间
 
 [myproject.redis.sentinels]
-service = [["124.223.5.168", 6379], ]
+service = [["http://frp.z33.fun", 6379], ]
 service_name = "mymaster"
 
 [myproject.mq]
