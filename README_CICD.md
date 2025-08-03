@@ -56,6 +56,14 @@ Kind: SSH Username with private key
 
 ID: prod-ssh
 
+### 4.github配置以及hook配置
+####4.1 GitHub项目（后缀不要.git）：https://github.com/NotBeBarnon/test_fastapi/
+####4.2 triggers
+勾选：GitHub hook trigger for GITScm polling
+勾选：Pipeline script from SCM
+git相关配置，使用的账号密码拉代码
+脚本路径：Jenkinsfile
+
 # 二、Docker compose 部署docker-registry
 运行地址： http://frp.z33.fun:23828/
 
@@ -193,13 +201,17 @@ pipeline {
 #### Dockerfile
 ```
 FROM python:3.11-slim AS builder
-WORKDIR /code
+
+WORKDIR /MyProject
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.11-slim
-WORKDIR /code
+
+WORKDIR /MyProject
+
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY . .
 EXPOSE 8089
 CMD ["python", "main.py"]
 ```
