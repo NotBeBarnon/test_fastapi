@@ -7,18 +7,18 @@ pipeline {
             // 或者 --pull missing
         }
     }
-    triggers {
-        GenericTrigger(
-            genericVariables: [
-                [key: 'CODING_REF', value: '$.ref'],
-                [key: 'CODING_REPOSITORY', value: '$.repository.clone_url']
-            ],
-            token: 'fastapi-demo',  // 自定义，安全即可
-            causeString: 'Triggered by CODING push',
-            printContributedVariables: false,
-            printPostContent: false
-        )
-    }
+//     triggers {
+//         GenericTrigger(
+//             genericVariables: [
+//                 [key: 'CODING_REF', value: '$.ref'],
+//                 [key: 'CODING_REPOSITORY', value: '$.repository.clone_url']
+//             ],
+//             token: 'fastapi-demo',  // 自定义，安全即可
+//             causeString: 'Triggered by CODING push',
+//             printContributedVariables: false,
+//             printPostContent: false
+//         )
+//     }
 
     environment {
         // 镜像名（不含 tag）
