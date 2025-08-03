@@ -36,15 +36,15 @@ pipeline {
     }
 
     stages {
-        stage('Debug Network') {
-            steps {
-                sh '''
-                    apt-get update && apt-get install -y curl
-                    curl -v https://github.com  # 测试 HTTPS
-                    ssh -T git@github.com       # 测试 SSH
-                '''
-            }
-        }
+//         stage('Debug Network') {
+//             steps {
+//                 sh '''
+//                     apt-get update && apt-get install -y curl
+//                     curl -v https://github.com  # 测试 HTTPS
+//                     ssh -T git@github.com       # 测试 SSH
+//                 '''
+//             }
+//         }
 
         /* ---------- 1. 拉取源码 ---------- */
         stage('Checkout') {
