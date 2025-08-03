@@ -2,7 +2,8 @@ pipeline {
     agent {
         docker {
             image 'python:3.11-slim'
-            args '-v /var/run/docker.sock:/var/run/docker.sock --pull never'   // 本地有就不再pull
+            args '--network host -v /var/run/docker.sock:/var/run/docker.sock'
+//             args '-v /var/run/docker.sock:/var/run/docker.sock --pull never'   // 本地有就不再pull
             // 或者 --pull missing
         }
     }
@@ -35,6 +36,15 @@ pipeline {
     }
 
     stages {
+        stage('Debug Network') {
+            steps {
+                sh '''
+                    apt-get update && apt-get install -y curl
+                    curl -v https://github.com  # 测试 HTTPS
+                    ssh -T git@github.com       # 测试 SSH
+                '''
+            }
+        }
 
         /* ---------- 1. 拉取源码 ---------- */
         stage('Checkout') {
