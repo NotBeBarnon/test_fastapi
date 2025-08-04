@@ -11,8 +11,8 @@ from enum import Enum
 from functools import wraps
 from typing import Tuple, Any, Union, Callable, Iterator, Set
 
-import aioredis
-from aioredis.sentinel import Sentinel
+from redis import asyncio as aioredis
+from redis.asyncio.sentinel import Sentinel
 from loguru import logger
 from fastapi.responses import Response
 from src.my_tools.singleton_tools import SingletonABCMeta

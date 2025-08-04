@@ -6,7 +6,7 @@
 import asyncio
 from typing import List, Tuple
 
-import aioredis
+from redis import asyncio as aioredis
 import orjson
 from loguru import logger
 

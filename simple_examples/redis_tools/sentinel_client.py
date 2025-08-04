@@ -5,24 +5,24 @@
 
 import asyncio
 
-import aioredis
+from redis import asyncio as aioredis
 from loguru import logger
 
 
 async def aioredis_redis():
-    from aioredis import Redis
-    redis = Redis(host='10.64.5.70', port=31081, db=0)
+
+    redis = aioredis.Redis(host='10.64.5.70', port=31081, db=0)
     await redis.set('Tuffy', 'this is redis')
     print(await redis.get('Tuffy'))
-    redis = Redis(host='10.64.5.70', port=31080, db=0)
+    redis = aioredis.Redis(host='10.64.5.70', port=31080, db=0)
     print(await redis.get('Tuffy'))
-    redis = Redis(host='10.64.5.70', port=31082, db=0)
+    redis = aioredis.Redis(host='10.64.5.70', port=31082, db=0)
     print(await redis.get('Tuffy'))
 
 
 async def aioredis_sentinel():
-    from aioredis.sentinel import Sentinel
-    sentinel = Sentinel([('10.64.5.70', 31380), ('10.64.5.70', 31381), ('10.64.5.70', 31382)], sentinel_kwargs={'db': 1})
+
+    sentinel = aioredis.Redis.Sentinel([('10.64.5.70', 31380), ('10.64.5.70', 31381), ('10.64.5.70', 31382)], sentinel_kwargs={'db': 1})
     master = sentinel.master_for('mymaster')
     await master.set('Tuffy', 'this is redis')
     slave = sentinel.slave_for('mymaster')
