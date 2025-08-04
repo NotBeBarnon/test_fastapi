@@ -2,22 +2,8 @@ pipeline {
     agent {
         docker {
             image 'python:3.11-slim'
-//             args '--network host -v /var/run/docker.sock:/var/run/docker.sock'
-            args '-v /var/run/docker.sock:/var/run/docker.sock --pull never'   // 本地有就不再pull
-            // 或者 --pull missing
+            args '-v /var/run/docker.sock:/var/run/docker.sock --pull never'   // 本地有就不再 pull
         }
-    }
-    triggers {
-        GenericTrigger(
-            genericVariables: [
-                [key: 'CODING_REF', value: '$.ref'],
-                [key: 'CODING_REPOSITORY', value: '$.repository.clone_url']
-            ],
-            token: 'fastapi-demo',  // 自定义，安全即可
-            causeString: 'Triggered by CODING push',
-            printContributedVariables: false,
-            printPostContent: false
-        )
     }
 
     environment {
@@ -36,20 +22,15 @@ pipeline {
     }
 
     stages {
-//         stage('Debug Network') {
-//             steps {
-//                 sh '''
-//                     apt-get update && apt-get install -y curl
-//                     curl -v https://github.com  # 测试 HTTPS
-//                     ssh -T git@github.com       # 测试 SSH
-//                 '''
-//             }
-//         }
-
         /* ---------- 1. 拉取源码 ---------- */
         stage('Checkout') {
             steps {
                 checkout scm
+                script {
+                    // 获取当前分支名称
+                    BRANCH_NAME = env.BRANCH_NAME
+                    echo "当前分支：${BRANCH_NAME}"
+                }
             }
         }
 
@@ -58,7 +39,7 @@ pipeline {
             steps {
                 sh 'python3 -m pip install --upgrade pip'
                 sh 'python3 -m pip install -r requirements.txt'
-//                 sh 'pytest app/ -v'
+                sh 'pytest app/ -v'  // 确保测试运行
             }
         }
 
@@ -77,7 +58,6 @@ pipeline {
                 script {
                     docker.withRegistry("${REGISTRY}", 'registry-auth') {
                         dockerImage.push()
-//                         dockerImage.push('latest')
                     }
                 }
             }
@@ -85,6 +65,12 @@ pipeline {
 
         /* ---------- 5. 部署到目标服务器 ---------- */
         stage('Deploy') {
+            when {
+                // 如果是开发或测试分支，自动部署
+                expression {
+                    return BRANCH_NAME == 'dev' || BRANCH_NAME == 'test'
+                }
+            }
             steps {
                 sh 'apt-get update && apt-get install -y openssh-client'   // 先装 ssh
                 sshagent(credentials: ["${SSH_CREDS}"]) {
@@ -93,13 +79,54 @@ pipeline {
                            -p ${DEPLOY_PORT} \
                            ${DEPLOY_USER}@${DEPLOY_HOST} << 'ENDSSH'
 set -e
+echo "Pulling Docker image: ${IMAGE_NAME}:${BUILD_NUMBER}"
 docker pull ${IMAGE_NAME}:${BUILD_NUMBER}
+echo "Stopping and removing existing container: fastapi-demo"
 docker stop fastapi-demo || true
-docker rm   fastapi-demo || true
+docker rm fastapi-demo || true
+echo "Running new container: fastapi-demo"
 docker run -d --name fastapi-demo \
            -p ${APP_PORT}:${DOCKER_PORT} \
            --restart unless-stopped \
            ${IMAGE_NAME}:${BUILD_NUMBER}
+echo "Deployment completed successfully."
+ENDSSH
+                    """
+                }
+            }
+        }
+
+        /* ---------- 6. 手动部署到生产环境 ---------- */
+        stage('Manual Deploy to Production') {
+            when {
+                // 如果是生产分支，手动触发部署
+                expression {
+                    return BRANCH_NAME == 'main' || BRANCH_NAME == 'master'
+                }
+            }
+            steps {
+                input {
+                    message "是否确认部署到生产环境？"
+                    ok "确认部署"
+                }
+                sh 'apt-get update && apt-get install -y openssh-client'   // 先装 ssh
+                sshagent(credentials: ["${SSH_CREDS}"]) {
+                    sh """
+                       ssh -o StrictHostKeyChecking=no \
+                           -p ${DEPLOY_PORT} \
+                           ${DEPLOY_USER}@${DEPLOY_HOST} << 'ENDSSH'
+set -e
+echo "Pulling Docker image: ${IMAGE_NAME}:${BUILD_NUMBER}"
+docker pull ${IMAGE_NAME}:${BUILD_NUMBER}
+echo "Stopping and removing existing container: fastapi-demo"
+docker stop fastapi-demo || true
+docker rm fastapi-demo || true
+echo "Running new container: fastapi-demo"
+docker run -d --name fastapi-demo \
+           -p ${APP_PORT}:${DOCKER_PORT} \
+           --restart unless-stopped \
+           ${IMAGE_NAME}:${BUILD_NUMBER}
+echo "Deployment completed successfully."
 ENDSSH
                     """
                 }
@@ -109,6 +136,9 @@ ENDSSH
 
     post {
         always  { echo 'Pipeline finished.' }
-        failure { echo 'Build failed! Check logs.' }
+        failure {
+            echo 'Build failed! Check logs for details.'
+            // 可选：发送通知或保存日志
+        }
     }
 }

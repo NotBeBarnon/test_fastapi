@@ -24,6 +24,7 @@ services:
 ```
 ### 2. Jenkins 插件
 ####Git
+####GitHub
 ####Pipeline
 ####Docker Pipeline（可选，方便写脚本）
 ####SSH Agent（用于远程部署）
@@ -31,10 +32,10 @@ services:
 ### 3. 凭据（Credentials）
 (系统管理 → Manage Credentials → 全局)
 ，要与Jenkinsfile变量匹配
-####3.1 CODING Git
+####3.1 github-user-psw
 Kind: Username with password
 
-ID: coding-git
+ID: github-user-psw
 ####3.2 自建 Registry
 Kind: 
 Username with password
@@ -215,3 +216,10 @@ COPY . .
 EXPOSE 8089
 CMD ["python", "main.py"]
 ```
+
+#四、逻辑流程
+###1. 触发流程是：
+
+![img.png](img.png)
+
+###2. 构建部署路程根据Jenkinsfile文件内容流水线来走
