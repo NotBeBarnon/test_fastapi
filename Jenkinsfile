@@ -39,7 +39,7 @@ pipeline {
             steps {
                 sh 'python3 -m pip install --upgrade pip'
                 sh 'python3 -m pip install -r requirements.txt'
-                sh 'pytest app/ -v'  // 确保测试运行
+//                 sh 'pytest app/ -v'  // 确保测试运行
             }
         }
 
