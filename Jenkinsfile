@@ -107,8 +107,9 @@ ENDSSH
             }
             steps {
                 input {
-                    message "是否确认部署到生产环境？"
-                    ok "确认部署"
+                    message: "是否确认部署到生产环境？",
+                    ok: "确认部署",
+                    timeout(time: 1, unit: 'HOURS')
                 }
                 sh 'apt-get update && apt-get install -y openssh-client'   // 先装 ssh
                 sshagent(credentials: ["${SSH_CREDS}"]) {
